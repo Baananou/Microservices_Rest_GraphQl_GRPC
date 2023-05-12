@@ -9,8 +9,8 @@ const protoLoader = require("@grpc/proto-loader");
 const movieProtoPath = "movie.proto";
 const tvShowProtoPath = "tvShow.proto";
 
-const resolvers = require("./resolvers");
-const typeDefs = require("./schema");
+const resolvers = require("../resolvers");
+const typeDefs = require("../schema");
 
 const app = express();
 app.use(bodyParser.json());
