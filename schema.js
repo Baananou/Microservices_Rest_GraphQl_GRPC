@@ -21,6 +21,7 @@ const typeDefs = `#graphql
   }
   type Mutation {
     createMovie(id: String!, title: String!, description:String!): Movie
+    createTvShow(id: String!, title: String!, description:String!): TVShow
   }
 `;
 

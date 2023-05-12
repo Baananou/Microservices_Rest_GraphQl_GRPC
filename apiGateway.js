@@ -1,10 +1,3 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = "https://pcmfnifyrcrabbegnwyh.supabase.co";
-// const supabaseKey = process.env.SUPABASE_KEY;
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbWZuaWZ5cmNyYWJiZWdud3loIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODM5MTQ4MzgsImV4cCI6MTk5OTQ5MDgzOH0.TUQ6xSlhdx-nJOhTeR_D23lqVkFndScI6cGKHTifPzE"
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 const express = require("express");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
@@ -107,6 +100,20 @@ app.get("/tvshows/:id", (req, res) => {
       res.json(response.tv_show);
     }
   });
+});
+
+app.post("/tvshow", (req, res) => {
+  const { id, title, description } = req.body;
+  clientTVShows.createTvShow(
+    { tv_show_id: id, title: title, description: description },
+    async (err, response) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json(response.tvShow);
+      }
+    }
+  );
 });
 
 const port = 3000;

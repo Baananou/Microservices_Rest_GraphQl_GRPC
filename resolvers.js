@@ -91,6 +91,17 @@ const resolvers = {
         });
       });
     },
+    createTvShow: (_, {id, title, description} ) => {
+      return new Promise((resolve, reject) => {
+        clientTVShows.createTvShow({tvShowId: id, title: title, description: description}, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response.tv_show);
+          }
+        });
+      });
+    },
   }
 };
 
