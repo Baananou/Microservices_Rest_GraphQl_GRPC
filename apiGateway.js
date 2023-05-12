@@ -1,4 +1,10 @@
-// apiGateway.js
+const { createClient } = require('@supabase/supabase-js');
+
+const supabaseUrl = "https://pcmfnifyrcrabbegnwyh.supabase.co";
+// const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbWZuaWZ5cmNyYWJiZWdud3loIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODM5MTQ4MzgsImV4cCI6MTk5OTQ5MDgzOH0.TUQ6xSlhdx-nJOhTeR_D23lqVkFndScI6cGKHTifPzE"
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 const express = require("express");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
@@ -6,13 +12,16 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
-// Charger les fichiers proto pour les films et les séries TV
+
 const movieProtoPath = "movie.proto";
 const tvShowProtoPath = "tvShow.proto";
+
 const resolvers = require("./resolvers");
 const typeDefs = require("./schema");
-// Créer une nouvelle application Express
+
 const app = express();
+app.use(bodyParser.json());
+
 const movieProtoDefinition = protoLoader.loadSync(movieProtoPath, {
   keepCase: true,
   longs: String,
@@ -29,18 +38,23 @@ const tvShowProtoDefinition = protoLoader.loadSync(tvShowProtoPath, {
 });
 const movieProto = grpc.loadPackageDefinition(movieProtoDefinition).movie;
 const tvShowProto = grpc.loadPackageDefinition(tvShowProtoDefinition).tvShow;
-// Créer une instance ApolloServer avec le schéma et les résolveurs importés
+const clientMovies = new movieProto.MovieService(
+  "localhost:50051",
+  grpc.credentials.createInsecure()
+);
+const clientTVShows = new tvShowProto.TVShowService(
+  "localhost:50052",
+  grpc.credentials.createInsecure()
+);
+
 const server = new ApolloServer({ typeDefs, resolvers });
-// Appliquer le middleware ApolloServer à l'application Express
+
 server.start().then(() => {
   app.use(cors(), bodyParser.json(), expressMiddleware(server));
 });
+
 app.get("/movies", (req, res) => {
-  const client = new movieProto.MovieService(
-    "localhost:50051",
-    grpc.credentials.createInsecure()
-  );
-  client.searchMovies({}, (err, response) => {
+  clientMovies.searchMovies({}, (err, response) => {
     if (err) {
       res.status(500).send(err);
     } else {
@@ -48,13 +62,24 @@ app.get("/movies", (req, res) => {
     }
   });
 });
-app.get("/movies/:id", (req, res) => {
-  const client = new movieProto.MovieService(
-    "localhost:50051",
-    grpc.credentials.createInsecure()
+
+app.post("/movie", (req, res) => {
+  const { id, title, description } = req.body;
+  clientMovies.createMovie(
+    { movie_id: id, title: title, description: description },
+    async (err, response) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.json(response.movie);
+      }
+    }
   );
+});
+
+app.get("/movies/:id", (req, res) => {
   const id = req.params.id;
-  client.getMovie({ movieId: id }, (err, response) => {
+  clientMovies.getMovie({ movieId: id }, (err, response) => {
     if (err) {
       res.status(500).send(err);
     } else {
@@ -62,12 +87,9 @@ app.get("/movies/:id", (req, res) => {
     }
   });
 });
+
 app.get("/tvshows", (req, res) => {
-  const client = new tvShowProto.TVShowService(
-    "localhost:50052",
-    grpc.credentials.createInsecure()
-  );
-  client.searchTvshows({}, (err, response) => {
+  clientTVShows.searchTvshows({}, (err, response) => {
     if (err) {
       res.status(500).send(err);
     } else {
@@ -75,13 +97,10 @@ app.get("/tvshows", (req, res) => {
     }
   });
 });
+
 app.get("/tvshows/:id", (req, res) => {
-  const client = new tvShowProto.TVShowService(
-    "localhost:50052",
-    grpc.credentials.createInsecure()
-  );
   const id = req.params.id;
-  client.getTvshow({ tvShowId: id }, (err, response) => {
+  clientTVShows.getTvshow({ tvShowId: id }, (err, response) => {
     if (err) {
       res.status(500).send(err);
     } else {
@@ -89,8 +108,8 @@ app.get("/tvshows/:id", (req, res) => {
     }
   });
 });
-// Démarrer l'application Express
+
 const port = 3000;
 app.listen(port, () => {
-  console.log(`API Gateway en cours d'exécution sur le port ${port}`);
+  console.log(`API Gateway running on port ${port}`);
 });

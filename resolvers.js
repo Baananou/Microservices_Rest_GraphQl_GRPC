@@ -1,9 +1,11 @@
-// resolvers.js
-const grpc = require("@grpc/grpc-js");
-const protoLoader = require("@grpc/proto-loader");
-// Charger les fichiers proto pour les films et les séries TV
-const movieProtoPath = "movie.proto";
-const tvShowProtoPath = "tvShow.proto";
+
+
+const grpc = require('@grpc/grpc-js');
+const protoLoader = require('@grpc/proto-loader');
+
+
+const movieProtoPath = 'movie.proto';
+const tvShowProtoPath = 'tvShow.proto';
 const movieProtoDefinition = protoLoader.loadSync(movieProtoPath, {
   keepCase: true,
   longs: String,
@@ -20,17 +22,16 @@ const tvShowProtoDefinition = protoLoader.loadSync(tvShowProtoPath, {
 });
 const movieProto = grpc.loadPackageDefinition(movieProtoDefinition).movie;
 const tvShowProto = grpc.loadPackageDefinition(tvShowProtoDefinition).tvShow;
-// Définir les résolveurs pour les requêtes GraphQL
+const clientMovies = new movieProto.MovieService('localhost:50051', grpc.credentials.createInsecure());
+const clientTVShows = new tvShowProto.TVShowService('localhost:50052', grpc.credentials.createInsecure());
+
+
 const resolvers = {
   Query: {
     movie: (_, { id }) => {
-      // Effectuer un appel gRPC au microservice de films
-      const client = new movieProto.MovieService(
-        "localhost:50051",
-        grpc.credentials.createInsecure()
-      );
+
       return new Promise((resolve, reject) => {
-        client.getMovie({ movieId: id }, (err, response) => {
+        clientMovies.getMovie({ movieId: id }, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -40,13 +41,10 @@ const resolvers = {
       });
     },
     movies: () => {
-      // Effectuer un appel gRPC au microservice de films
-      const client = new movieProto.MovieService(
-        "localhost:50051",
-        grpc.credentials.createInsecure()
-      );
+
+
       return new Promise((resolve, reject) => {
-        client.searchMovies({}, (err, response) => {
+        clientMovies.searchMovies({}, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -56,13 +54,9 @@ const resolvers = {
       });
     },
     tvShow: (_, { id }) => {
-      // Effectuer un appel gRPC au microservice de séries TV
-      const client = new tvShowProto.TVShowService(
-        "localhost:50052",
-        grpc.credentials.createInsecure()
-      );
+   
       return new Promise((resolve, reject) => {
-        client.getTvshow({ tvShowId: id }, (err, response) => {
+        clientTVShows.getTvshow({ tvShowId: id }, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -72,13 +66,9 @@ const resolvers = {
       });
     },
     tvShows: () => {
-      // Effectuer un appel gRPC au microservice de séries TV
-      const client = new tvShowProto.TVShowService(
-        "localhost:50052",
-        grpc.credentials.createInsecure()
-      );
+    
       return new Promise((resolve, reject) => {
-        client.searchTvshows({}, (err, response) => {
+        clientTVShows.searchTvshows({}, (err, response) => {
           if (err) {
             reject(err);
           } else {
@@ -87,6 +77,21 @@ const resolvers = {
         });
       });
     },
+   
   },
+  Mutation: {
+    createMovie: (_, {id, title, description} ) => {
+      return new Promise((resolve, reject) => {
+        clientMovies.createMovie({movie_id: id, title: title, description: description}, (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response.movie);
+          }
+        });
+      });
+    },
+  }
 };
+
 module.exports = resolvers;
