@@ -4,7 +4,7 @@ package movie;
 
 
 message Movie {
-  int32 id = 1;
+  string id = 1;
   string title = 2;
   string description = 3;
 
@@ -13,7 +13,7 @@ message Movie {
 
 
 message GetMovieRequest {
-  int32 movie_id = 1;
+  string movie_id = 1;
 }
 
 message GetMovieResponse {
@@ -29,7 +29,7 @@ message SearchMoviesResponse {
 }
 
 message CreateMovieRequest {
-  int32 movie_id = 1;
+  string movie_id = 1;
   string title = 2;
   string description = 3;
 }
